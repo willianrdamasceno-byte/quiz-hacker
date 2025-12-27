@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberQuiz: Hacker Edition</title>
+    <title>CyberQuiz: Hacker Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,42 +13,37 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        mono: ['"Fira Code"', 'monospace'],
-                    },
+                    fontFamily: { mono: ['"Fira Code"', 'monospace'] },
                     colors: {
                         hacker: {
                             green: '#00ff41',
                             dark: '#0a0a0a',
                             muted: '#003b00',
-                            glow: '#00ff4133',
                             glitch1: '#ff00ff',
                             glitch2: '#00ffff'
                         }
                     },
                     animation: {
                         'glitch-text': 'glitch 1s linear infinite',
-                        'scanline': 'scanline 10s linear infinite',
-                        'flicker': 'flicker 0.15s infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scanline': 'scanline 15s linear infinite',
+                        'flicker': 'flicker 0.1s infinite',
                     },
                     keyframes: {
                         glitch: {
-                            '0%': { transform: 'translate(0)' },
-                            '20%': { transform: 'translate(-2px, 2px)' },
-                            '40%': { transform: 'translate(-2px, -2px)' },
-                            '60%': { transform: 'translate(2px, 2px)' },
-                            '80%': { transform: 'translate(2px, -2px)' },
-                            '100%': { transform: 'translate(0)' },
+                            '0%, 100%': { transform: 'translate(0)' },
+                            '20%': { transform: 'translate(-1px, 1px)' },
+                            '40%': { transform: 'translate(-1px, -1px)' },
+                            '60%': { transform: 'translate(1px, 1px)' },
+                            '80%': { transform: 'translate(1px, -1px)' },
                         },
                         scanline: {
                             '0%': { transform: 'translateY(-100%)' },
                             '100%': { transform: 'translateY(100%)' },
                         },
                         flicker: {
-                            '0%': { opacity: '0.97' },
+                            '0%': { opacity: '0.98' },
                             '50%': { opacity: '1' },
-                            '100%': { opacity: '0.98' },
+                            '100%': { opacity: '0.99' },
                         }
                     }
                 }
@@ -60,22 +55,19 @@
             background-color: #0a0a0a;
             color: #00ff41;
             margin: 0;
-            overflow-x: hidden;
+            overflow: hidden;
             font-family: 'Fira Code', monospace;
         }
 
-        /* CRT Screen Effect Overlay */
+        /* Efeito CRT Retro */
         .crt::before {
             content: " ";
             display: block;
             position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
             z-index: 1000;
-            background-size: 100% 2px, 3px 100%;
+            background-size: 100% 3px, 3px 100%;
             pointer-events: none;
         }
 
@@ -83,45 +75,29 @@
             content: " ";
             display: block;
             position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: rgba(18, 16, 16, 0.1);
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(18, 16, 16, 0.05);
             opacity: 0;
             z-index: 1000;
             pointer-events: none;
             animation: flicker 0.15s infinite;
         }
 
-        .glitch-hover:hover {
-            animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
-            text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0a0a0a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #003b00;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00ff41;
-        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #003b00; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff41; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+      }
+    }
+    </script>
 </head>
 <body class="crt">
     <div id="root"></div>
