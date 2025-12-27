@@ -1,9 +1,10 @@
 
-import React, { useReducer, useCallback } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { Difficulty, QuizState, QuizAction } from './types';
 import { fetchQuizQuestions } from './services/geminiService';
 import { GlitchText } from './components/GlitchText';
 import { ProgressBar } from './components/ProgressBar';
+import { audioService } from './services/audioService';
 
 const initialState: QuizState = {
   currentQuestionIndex: 0,
@@ -53,28 +54,63 @@ const App: React.FC = () => {
   const [selectedOption, setSelectedOption] = React.useState<number | null>(null);
   const [isRevealed, setIsRevealed] = React.useState(false);
 
+  // Play processing sound periodically when loading
+  useEffect(() => {
+    let interval: number;
+    if (state.isLoading) {
+      audioService.playProcessing();
+      interval = window.setInterval(() => {
+        audioService.playProcessing();
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [state.isLoading]);
+
+  // Play finish sound when quiz ends
+  useEffect(() => {
+    if (state.isFinished) {
+      audioService.playFinish();
+    }
+  }, [state.isFinished]);
+
   const startQuiz = async (diff: Difficulty) => {
+    audioService.playClick();
     dispatch({ type: 'SET_LOADING', loading: true });
     try {
       const questions = await fetchQuizQuestions(diff);
       dispatch({ type: 'START_QUIZ', difficulty: diff, questions });
     } catch (err) {
+      audioService.playIncorrect();
       dispatch({ type: 'SET_ERROR', error: 'System connection failure. Retrying...' });
     }
   };
 
   const handleAnswer = (index: number) => {
     if (isRevealed) return;
+    
+    const isCorrect = index === state.questions[state.currentQuestionIndex].correctIndex;
+    
+    if (isCorrect) {
+      audioService.playCorrect();
+    } else {
+      audioService.playIncorrect();
+    }
+
     setSelectedOption(index);
     setIsRevealed(true);
-    const isCorrect = index === state.questions[state.currentQuestionIndex].correctIndex;
     dispatch({ type: 'ANSWER_QUESTION', isCorrect });
   };
 
   const handleNext = () => {
+    audioService.playClick();
     setIsRevealed(false);
     setSelectedOption(null);
     dispatch({ type: 'NEXT_QUESTION' });
+  };
+
+  const restart = () => {
+    audioService.playClick();
+    dispatch({ type: 'RESTART' });
   };
 
   const currentQuestion = state.questions[state.currentQuestionIndex];
@@ -152,7 +188,7 @@ const App: React.FC = () => {
             <GlitchText text="SYSTEM ERROR" className="text-3xl text-red-500 mb-6" />
             <p className="text-red-400 mb-8">{state.error}</p>
             <button 
-              onClick={() => dispatch({ type: 'RESTART' })}
+              onClick={restart}
               className="px-6 py-2 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
             >
               RESET TERMINAL
@@ -185,9 +221,9 @@ const App: React.FC = () => {
                   btnClass += " border-hacker-green hover:bg-hacker-green/10";
                 } else {
                   if (isCorrect) {
-                    btnClass += " border-hacker-green bg-hacker-green/20 text-hacker-green";
+                    btnClass += " border-hacker-green bg-hacker-green/20 text-hacker-green shadow-[0_0_10px_rgba(0,255,65,0.3)]";
                   } else if (isSelected) {
-                    btnClass += " border-red-500 bg-red-500/20 text-red-500";
+                    btnClass += " border-red-500 bg-red-500/20 text-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]";
                   } else {
                     btnClass += " border-hacker-green/20 opacity-50";
                   }
@@ -204,8 +240,8 @@ const App: React.FC = () => {
                       {String.fromCharCode(65 + idx)}
                     </span>
                     <span className="flex-grow">{option}</span>
-                    {isRevealed && isCorrect && <span className="ml-2">✓</span>}
-                    {isRevealed && isSelected && !isCorrect && <span className="ml-2">✗</span>}
+                    {isRevealed && isCorrect && <span className="ml-2 animate-pulse">✓</span>}
+                    {isRevealed && isSelected && !isCorrect && <span className="ml-2 animate-pulse">✗</span>}
                   </button>
                 );
               })}
@@ -219,7 +255,7 @@ const App: React.FC = () => {
                 </div>
                 <button
                   onClick={handleNext}
-                  className="w-full py-4 bg-hacker-green text-hacker-dark font-bold tracking-[0.2em] hover:brightness-110 active:scale-[0.98] transition-all uppercase"
+                  className="w-full py-4 bg-hacker-green text-hacker-dark font-bold tracking-[0.2em] hover:brightness-110 active:scale-[0.98] transition-all uppercase shadow-[0_0_15px_rgba(0,255,65,0.4)]"
                 >
                   {state.currentQuestionIndex + 1 === state.questions.length ? 'Finalize Scan' : 'Next Packet >'}
                 </button>
@@ -233,7 +269,7 @@ const App: React.FC = () => {
           <div className="text-center py-8">
             <GlitchText text="SCAN_COMPLETE" as="h2" className="text-4xl font-bold mb-8" />
             
-            <div className="inline-block relative p-10 border-4 border-hacker-green mb-10">
+            <div className="inline-block relative p-10 border-4 border-hacker-green mb-10 shadow-[0_0_30px_rgba(0,255,65,0.1)]">
               <div className="text-6xl font-bold mb-2">
                 {state.score}<span className="text-hacker-green/50 text-2xl">/{state.questions.length}</span>
               </div>
@@ -257,8 +293,8 @@ const App: React.FC = () => {
             </div>
 
             <button
-              onClick={() => dispatch({ type: 'RESTART' })}
-              className="px-10 py-4 border border-hacker-green hover:bg-hacker-green hover:text-hacker-dark transition-all duration-300 font-bold uppercase tracking-widest"
+              onClick={restart}
+              className="px-10 py-4 border border-hacker-green hover:bg-hacker-green hover:text-hacker-dark transition-all duration-300 font-bold uppercase tracking-widest shadow-[0_0_10px_rgba(0,255,65,0.2)]"
             >
               Relog System
             </button>
